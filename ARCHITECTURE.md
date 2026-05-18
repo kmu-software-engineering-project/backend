@@ -48,7 +48,8 @@ se_backend/
 ├── docs/
 ├── .github/workflows/
 ├── manage.py
-└── requirements.txt
+├── pyproject.toml
+└── uv.lock
 ```
 
 ---

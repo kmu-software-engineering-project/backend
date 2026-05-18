@@ -14,14 +14,15 @@
       "Bash(python manage.py startapp*)",
       "Bash(python manage.py test*)",
       "Bash(python manage.py shell*)",
-      "Bash(pip install*)",
-      "Bash(pip freeze*)",
-      "Bash(pip list*)",
       "Bash(python -m pytest*)",
       "Bash(black*)",
       "Bash(flake8*)",
       "Bash(isort*)",
-      "Bash(pre-commit*)"
+      "Bash(pre-commit*)",
+      "Bash(uv add*)",
+      "Bash(uv sync*)",
+      "Bash(uv run*)",
+      "Bash(uv lock*)"
     ],
     "deny": [
       "Bash(git push*)",
