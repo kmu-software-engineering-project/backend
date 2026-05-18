@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 패키지 설치
+        run: pip install -r requirements.txt
+
+      - name: black 코드 포맷 검사
+        run: black --check .
+
+      - name: isort import 순서 검사
+        run: isort --check-only .
+
+      - name: flake8 코드 품질 검사
+        run: flake8 .
+
+      - name: Django 테스트 실행
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: "True"
+        run: python manage.py test
