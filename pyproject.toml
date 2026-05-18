@@ -1,0 +1,36 @@
+[project]
+name = "se-backend"
+version = "0.1.0"
+description = "도서 추천 플랫폼 백엔드"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.2.14,<6.0",
+    "djangorestframework>=3.17.1",
+    "django-cors-headers>=4.9.0",
+    "python-dotenv>=1.2.2",
+]
+
+[dependency-groups]
+dev = [
+    "black>=26.5.0",
+    "flake8>=7.3.0",
+    "isort>=8.0.1",
+    "pre-commit>=4.6.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+exclude = '''
+/(
+    \.venv
+  | venv
+  | migrations
+  | __pycache__
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+skip = [".venv", "venv", "migrations"]
