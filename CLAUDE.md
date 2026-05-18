@@ -40,8 +40,8 @@ se_backend/
 ├── CLAUDE.md                  # AI 업무지침서 (현재 파일)
 ├── ARCHITECTURE.md            # 시스템 전체 구조
 ├── manage.py
-├── requirements.txt
-├── pyproject.toml             # 코드 스타일 설정
+├── pyproject.toml             # 의존성 정의 + 코드 스타일 설정
+├── uv.lock                    # uv 자동 생성 lock 파일 (수정 금지)
 ├── .pre-commit-config.yaml    # 프리커밋 훅
 ├── .env                       # 환경변수 (git 제외)
 ├── .env.example               # 환경변수 예시 (git 포함)
@@ -88,8 +88,32 @@ se_backend/
 
 ## 개발 규칙
 
+### 빌드 & 실행 명령어
+
+```bash
+# 패키지 설치 (최초 또는 pyproject.toml 변경 후)
+uv sync --dev
+
+# Django 서버 실행
+uv run python manage.py runserver
+
+# 마이그레이션
+uv run python manage.py makemigrations
+uv run python manage.py migrate
+
+# 테스트 실행
+uv run python manage.py test
+
+# 린트 전체 검사
+uv run pre-commit run --all-files
+
+# 패키지 추가 방법
+uv add {패키지명}           # 운영 의존성 추가
+uv add --dev {패키지명}     # 개발 의존성 추가
+```
+
 ### 앱 구조
-- 기능 단위로 Django 앱을 분리: `python manage.py startapp {앱이름}`
+- 기능 단위로 Django 앱을 분리: `uv run python manage.py startapp {앱이름}`
 - 각 앱은 `models.py`, `serializers.py`, `views.py`, `urls.py`, `tests.py` 포함
 
 ### API 설계
@@ -144,5 +168,5 @@ BOOKSTORE_API_KEY=
 - 외부 API 키를 코드에 하드코딩하지 않음
 - `main` 브랜치에 직접 커밋하지 않음
 - DB 마이그레이션 파일은 자동 생성 후 반드시 내용 확인
-- 패키지 추가 시 `requirements.txt` 업데이트 필수
+- 패키지 추가 시 `uv add {패키지명}` 사용 — `pyproject.toml`과 `uv.lock` 자동 업데이트
 - 테스트 없이 새 기능을 완료 처리하지 않음
