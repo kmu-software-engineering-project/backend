@@ -61,7 +61,7 @@ se_backend/
 ├── docs/
 │   ├── SECURITY.md
 │   ├── QUALITY_SCORE.md
-│   └── RELIABILITY.md
+│   └── decisions/               # 아키텍처 결정 기록 (ADR)
 │
 └── {app_name}/                # 기능별 앱 (추후 추가)
     ├── models.py
