@@ -23,7 +23,8 @@ line-length = 88
 target-version = ["py312"]
 exclude = '''
 /(
-    venv
+    \.venv
+  | venv
   | migrations
   | __pycache__
 )/
@@ -32,4 +33,4 @@ exclude = '''
 [tool.isort]
 profile = "black"
 line_length = 88
-skip = ["venv", "migrations"]
+skip = [".venv", "venv", "migrations"]
