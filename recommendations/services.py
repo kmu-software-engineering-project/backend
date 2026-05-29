@@ -1,0 +1,198 @@
+import json
+import os
+
+import openai
+
+# 한국어 변환 딕셔너리
+BOOK_TYPE_KO = {
+    "FICTION": "소설/에세이/시·문학",
+    "NONFICTION": "비문학/실용/전문 도서",
+}
+
+GENRE_KO = {
+    # FICTION
+    "romance": "로맨스",
+    "fantasy": "판타지",
+    "sf": "SF",
+    "mystery": "미스터리",
+    "thriller": "스릴러",
+    "horror": "공포",
+    "historical": "역사 소설",
+    "coming_of_age": "성장 소설",
+    "family": "가족",
+    "human_drama": "휴먼 드라마",
+    "classic": "고전 문학",
+    "contemporary": "현대 문학",
+    # NONFICTION
+    "humanities": "인문학",
+    "psychology": "심리학",
+    "self_help": "자기계발",
+    "economics": "경제/경영",
+    "social_political": "사회/정치",
+    "history": "역사",
+    "science": "과학",
+    "tech_it": "기술/IT",
+    "arts_culture": "예술/문화",
+    "travel": "여행",
+    "health": "건강",
+    "education": "교육",
+    "religion": "종교",
+}
+
+INTEREST_KO = {
+    "relationships": "인간관계",
+    "love": "사랑",
+    "growth": "성장",
+    "comfort": "위로",
+    "self_esteem": "자존감",
+    "psychology": "심리",
+    "meaning_of_life": "삶의 의미",
+    "money_investment": "돈/투자",
+    "career": "커리어",
+    "social_issues": "사회 이슈",
+    "history": "역사",
+    "science_tech": "과학/기술",
+    "arts_creation": "예술/창작",
+    "travel": "여행",
+    "mystery": "미스터리",
+    "new_world": "새로운 세계",
+    "other": "기타",
+}
+
+PURPOSE_KO = {
+    "immersion": "몰입",
+    "mood_change": "기분 전환",
+    "comfort": "위로",
+    "knowledge": "지식 습득",
+    "contemplation": "사색",
+    "light_read": "가벼운 독서",
+    "deep_read": "깊이 있는 독서",
+    "assignment": "과제/학습",
+    "new_taste": "새로운 취향 탐색",
+    "other": "기타",
+}
+
+MOOD_KO = {
+    "warm": "따뜻한",
+    "dark": "어두운",
+    "emotional": "감성적인",
+    "cheerful": "유쾌한",
+    "calm": "차분한",
+    "philosophical": "철학적인",
+    "tense": "긴장감 있는",
+    "realistic": "현실적인",
+    "dreamy": "몽환적인",
+    "hopeful": "희망적인",
+    "sad": "슬픈",
+}
+
+DIFFICULTY_KO = {
+    "very_easy": "아주 쉬운",
+    "moderate": "보통 난이도",
+    "literary": "문학적인",
+    "professional": "전문적인",
+    "deep": "깊이 있는",
+    "short_light": "짧고 가벼운",
+    "long_ok": "길어도 괜찮음",
+}
+
+
+def _translate_list(values: list, mapping: dict) -> list:
+    """코드 리스트를 한국어 리스트로 변환. 매핑이 없으면 원본 값을 그대로 사용."""
+    return [mapping.get(v, v) for v in values or []]
+
+
+def build_prompt(data: dict) -> str:
+    """검증된 폼 데이터를 한국어 자연어 프롬프트로 변환한다."""
+    book_type = data.get("book_type", "")
+    genres = data.get("genres", []) or []
+    interests = data.get("interests", []) or []
+    interests_other = (data.get("interests_other") or "").strip()
+    purpose = data.get("purpose", []) or []
+    purpose_other = (data.get("purpose_other") or "").strip()
+    mood = data.get("mood", []) or []
+    difficulty = data.get("difficulty", []) or []
+    favorite_books = (data.get("favorite_books") or "").strip()
+    avoid_elements = (data.get("avoid_elements") or "").strip()
+
+    book_type_ko = BOOK_TYPE_KO.get(book_type, book_type)
+    genres_ko = _translate_list(genres, GENRE_KO)
+    interests_ko = _translate_list(interests, INTEREST_KO)
+    purpose_ko = _translate_list(purpose, PURPOSE_KO)
+    mood_ko = _translate_list(mood, MOOD_KO)
+    difficulty_ko = _translate_list(difficulty, DIFFICULTY_KO)
+
+    lines = []
+    lines.append(
+        f"독자는 '{book_type_ko}' 분야를 선호하며, "
+        f"세부 장르는 {', '.join(genres_ko)} 입니다."
+    )
+
+    if interests_ko:
+        interests_text = ", ".join(interests_ko)
+        if interests_other:
+            interests_text += f" (기타 관심사: {interests_other})"
+        lines.append(f"관심 있는 주제는 {interests_text} 입니다.")
+    elif interests_other:
+        lines.append(f"기타 관심 주제: {interests_other}.")
+
+    if purpose_ko:
+        purpose_text = ", ".join(purpose_ko)
+        if purpose_other:
+            purpose_text += f" (기타 목적: {purpose_other})"
+        lines.append(f"독서를 통해 얻고 싶은 것은 {purpose_text} 입니다.")
+    elif purpose_other:
+        lines.append(f"기타 독서 목적: {purpose_other}.")
+
+    if book_type == "FICTION" and mood_ko:
+        lines.append(f"선호하는 작품 분위기는 {', '.join(mood_ko)} 입니다.")
+
+    if difficulty_ko:
+        lines.append(f"선호하는 책의 깊이/난이도는 {', '.join(difficulty_ko)} 입니다.")
+
+    if favorite_books:
+        lines.append(f"좋아하는 책/작가/작품: {favorite_books}.")
+
+    if avoid_elements:
+        lines.append(f"피하고 싶은 요소: {avoid_elements}.")
+
+    lines.append(
+        "위 취향을 종합적으로 고려하여 한국 독자에게 적합한 책 5권을 추천해 주세요."
+    )
+
+    return "\n".join(lines)
+
+
+def get_book_recommendations(validated_data: dict) -> list:
+    """
+    OpenAI GPT API를 호출하여 맞춤 도서 5권을 추천합니다.
+    반환: [{"title": str, "author": str, "reason": str}, ...]
+    """
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    model = os.getenv("OPENAI_MODEL", "gpt-4o")
+
+    user_prompt = build_prompt(validated_data)
+
+    system_prompt = """당신은 도서 전문가입니다. 사용자의 취향 정보를 바탕으로 독자에게 적합한 책 5권을 추천해주세요.
+반드시 다음 JSON 형식으로만 응답하세요:
+{
+  "recommendations": [
+    {"title": "책 제목", "author": "저자명", "reason": "추천 이유 (사용자 취향과의 연관성)"}
+  ]
+}
+- 국내외 도서 모두 포함 가능 (번역서의 경우 한국어 제목 사용)
+- reason은 해당 사용자의 취향과 연결하여 구체적으로 작성 (2-3문장)
+- 5권의 책은 서로 중복 없이 다양한 책을 추천"""
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.7,
+    )
+
+    result = json.loads(response.choices[0].message.content)
+    return result.get("recommendations", [])
