@@ -190,3 +190,30 @@ class TestRecommendationView(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
         self.assertIn("error", response.data)
+
+    @patch("recommendations.services.openai.OpenAI")
+    def test_recommendation_includes_isbn(self, mock_openai_class):
+        """GPT 응답에 isbn 필드가 포함될 때 recommendations 각 항목에 isbn 키가 있어야 한다."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = json.dumps(
+            {
+                "recommendations": [
+                    {
+                        "title": "채식주의자",
+                        "author": "한강",
+                        "reason": "취향에 맞는 책입니다.",
+                        "isbn": "9788936433598",
+                    }
+                ]
+            }
+        )
+        mock_client.chat.completions.create.return_value = mock_response
+
+        response = self.client.post(self.url, self.valid_payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("recommendations", response.data)
+        for item in response.data["recommendations"]:
+            self.assertIn("isbn", item)

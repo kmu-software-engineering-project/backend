@@ -1,145 +1,164 @@
-# 요구사항: 맞춤 도서 추천 기능 (recommendations 앱)
+# 요구사항 명세서
 
 ## 작업 개요
-사용자 취향 폼 입력을 기반으로 OpenAI GPT API(gpt-4o)를 호출하여 맞춤 도서 5권을 추천하는 REST API 구현.
 
-## 설계 결정 사항
-| 항목 | 결정 |
-|------|------|
-| 앱 이름 | `recommendations` |
-| 저장 방식 | Stateless (DB 저장 없음) |
-| 인증 | 불필요 (AllowAny) |
-| GPT 모델 | gpt-4o |
-| 추천 권수 | 5권 |
-| 엔드포인트 | POST /api/v1/recommendations/ |
+GPT 기반 도서 추천 시스템에 두 가지 기능을 추가한다.
 
-## 구현 파일 목록
-- `recommendations/models.py` - 빈 상태 유지 (Stateless)
-- `recommendations/serializers.py` - 폼 입력 유효성 검사
-- `recommendations/services.py` - OpenAI GPT 연동 서비스
-- `recommendations/views.py` - RecommendationView (APIView)
-- `recommendations/urls.py` - URL 라우팅
-- `recommendations/tests.py` - 단위 테스트
-- `config/urls.py` - 앱 URL 등록 (include)
-- `config/settings.py` - INSTALLED_APPS 추가
-- `.env.example` - OPENAI_API_KEY, OPENAI_MODEL 추가
-- `pyproject.toml` - openai 패키지 의존성 추가
+1. **추천 API ISBN 필드 추가**: 기존 recommendations 앱의 GPT 응답에 isbn 필드 추가
+2. **bookstores 앱 신규 생성**: 네이버 쇼핑 API 기반 서점별 가격 비교 API 구현
 
-## 폼 필드 스펙
+---
 
-### 1. book_type (필수, 단일 선택)
-| 값 | 표시명 |
-|----|--------|
-| `FICTION` | 소설/에세이/시·문학 |
-| `NONFICTION` | 비문학 |
+## 현재 구현 상태
 
-### 2. genres (필수, 복수 선택 - book_type 분기)
+- `recommendations` 앱 존재
+- `POST /api/v1/recommendations/` 구현됨
+- `recommendations/services.py`의 `get_book_recommendations()`가 OpenAI GPT API 호출
+- 현재 응답: `[{"title": str, "author": str, "reason": str}, ...]`
 
-**FICTION 장르:**
-| 값 | 표시명 |
-|----|--------|
-| `romance` | 로맨스 |
-| `fantasy` | 판타지 |
-| `sf` | SF |
-| `mystery` | 추리/미스터리 |
-| `thriller` | 스릴러 |
-| `horror` | 공포 |
-| `historical` | 역사소설 |
-| `coming_of_age` | 성장소설 |
-| `family` | 가족소설 |
-| `human_drama` | 휴먼드라마 |
-| `classic` | 고전문학 |
-| `contemporary` | 현대문학 |
+---
 
-**NONFICTION 장르:**
-| 값 | 표시명 |
-|----|--------|
-| `humanities` | 인문/철학 |
-| `psychology` | 심리 |
-| `self_help` | 자기계발 |
-| `economics` | 경제/경영 |
-| `social_political` | 사회/정치 |
-| `history` | 역사 |
-| `science` | 과학 |
-| `tech_it` | 기술/IT |
-| `arts_culture` | 예술/문화 |
-| `travel` | 여행 |
-| `health` | 건강 |
-| `education` | 교육 |
-| `religion` | 종교 |
+## Task 1. recommendations 앱 수정 — ISBN 필드 추가
 
-### 3. interests (선택, 복수 선택 + 기타 자유 입력)
-`relationships`, `love`, `growth`, `comfort`, `self_esteem`, `psychology`,
-`meaning_of_life`, `money_investment`, `career`, `social_issues`, `history`,
-`science_tech`, `arts_creation`, `travel`, `mystery`, `new_world`, `other`
+### 대상 파일
+- `recommendations/services.py`
 
-- `interests_other`: 자유 텍스트 (interests에 "other" 포함 시 필수)
+### 변경 내용
+- `get_book_recommendations()` 내 GPT system prompt 수정
+- `isbn` 필드를 JSON 응답에 포함하도록 요청
+- ISBN을 모를 경우 `null` 반환 허용
 
-### 4. purpose (선택, 복수 선택 + 기타 자유 입력)
-`immersion`, `mood_change`, `comfort`, `knowledge`, `contemplation`,
-`light_read`, `deep_read`, `assignment`, `new_taste`, `other`
-
-- `purpose_other`: 자유 텍스트 (purpose에 "other" 포함 시 필수)
-
-### 5. mood (선택, 복수 선택 - FICTION 전용)
-`warm`, `dark`, `emotional`, `cheerful`, `calm`, `philosophical`,
-`tense`, `realistic`, `dreamy`, `hopeful`, `sad`
-
-### 6. difficulty (선택, 복수 선택)
-`very_easy`, `moderate`, `literary`, `professional`, `deep`, `short_light`, `long_ok`
-
-### 7. favorite_books (선택, 자유 텍스트)
-과거에 재밌게 읽었던 책 이름
-
-### 8. avoid_elements (선택, 자유 텍스트)
-피하고 싶은 요소
-
-## Serializer 유효성 검사 규칙
-1. `book_type=FICTION` → `genres`는 FICTION 장르 목록에서만 허용
-2. `book_type=NONFICTION` → `genres`는 NONFICTION 장르 목록에서만 허용
-3. `book_type=NONFICTION` → `mood` 필드 값 있어도 무시 (None으로 처리)
-4. `interests`에 `other` 포함 시 → `interests_other` 필수
-5. `purpose`에 `other` 포함 시 → `purpose_other` 필수
-
-## API 요청/응답 스펙
-
-### 요청 (POST /api/v1/recommendations/)
-```json
-{
-  "book_type": "FICTION",
-  "genres": ["romance", "contemporary"],
-  "interests": ["love", "growth"],
-  "purpose": ["immersion"],
-  "mood": ["warm", "emotional"],
-  "difficulty": ["moderate"],
-  "favorite_books": "채식주의자, 82년생 김지영",
-  "avoid_elements": "잔인한 묘사, 전쟁"
-}
-```
-
-### 응답
+### 변경 후 GPT 응답 구조
 ```json
 {
   "recommendations": [
     {
-      "title": "책 제목",
-      "author": "저자명",
-      "reason": "추천 이유 (사용자 취향과의 연관성 설명)"
+      "title": "채식주의자",
+      "author": "한강",
+      "reason": "추천 이유 (2-3문장)",
+      "isbn": "9788936433598"
     }
   ]
 }
 ```
 
-## 환경변수
-```
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4o
+### 수정할 system_prompt 내용
+- 기존: `{"title": "책 제목", "author": "저자명", "reason": "추천 이유"}`
+- 변경: `{"title": "책 제목", "author": "저자명", "reason": "추천 이유", "isbn": "ISBN 13자리 숫자 (모를 경우 null)"}`
+
+---
+
+## Task 2. bookstores 앱 신규 생성
+
+### 앱 정보
+- 앱 이름: `bookstores`
+- INSTALLED_APPS 등록 필요: `"bookstores"`
+
+### 모델
+- DB 모델 없음 (외부 API 연동만 수행)
+
+### API 엔드포인트
+
+#### `GET /api/v1/bookstores/prices/`
+
+**목적:** 네이버 쇼핑 API를 통해 책의 서점별 가격 비교 정보 반환
+
+**쿼리 파라미터:**
+| 파라미터 | 필수 여부 | 설명 |
+|----------|----------|------|
+| `title` | 필수 | 책 제목 |
+| `author` | 선택 | 저자명 (검색 정확도 향상) |
+| `isbn` | 선택 | ISBN 13자리 (있으면 우선 사용) |
+
+**처리 로직:**
+1. `isbn`이 있으면 isbn으로 검색, 없으면 `title + author`로 검색
+2. 네이버 쇼핑 검색 API 호출:
+   - URL: `https://openapi.naver.com/v1/search/shop.json`
+   - 헤더: `X-Naver-Client-Id`, `X-Naver-Client-Secret`
+   - 파라미터: `query={검색어}`, `display=30`, `sort=sim`
+3. 결과에서 각 서점별 최저가 추출 (동일 서점 중복 시 가장 낮은 가격 선택)
+4. 가격 오름차순 정렬
+
+**성공 응답 (200 OK):**
+```json
+{
+  "book": {
+    "title": "채식주의자",
+    "author": "한강"
+  },
+  "stores": [
+    {
+      "store_name": "알라딘",
+      "price": 12600,
+      "purchase_url": "https://www.aladin.co.kr/..."
+    },
+    {
+      "store_name": "YES24",
+      "price": 12800,
+      "purchase_url": "https://www.yes24.com/..."
+    },
+    {
+      "store_name": "교보문고",
+      "price": 13500,
+      "purchase_url": "https://product.kyobobook.co.kr/..."
+    }
+  ]
+}
 ```
 
-## 테스트 시나리오
-1. Serializer - 정상 FICTION 입력 검증
-2. Serializer - 정상 NONFICTION 입력 검증
-3. Serializer - FICTION 타입에 NONFICTION 장르 입력 시 에러
-4. Serializer - interests에 other 포함 시 interests_other 없으면 에러
-5. View - OpenAI mock으로 정상 추천 응답 확인
-6. View - 잘못된 입력 시 400 반환 확인
+**에러 응답:**
+| 상황 | HTTP 코드 | 응답 |
+|------|----------|------|
+| `title` 파라미터 누락 | 400 | `{"error": "title 파라미터가 필요합니다."}` |
+| 네이버 API 키 미설정 | 503 | `{"error": "가격 비교 서비스를 사용할 수 없습니다."}` |
+| 네이버 API 호출 실패 | 503 | `{"error": "가격 비교 서비스를 사용할 수 없습니다."}` |
+| 검색 결과 없음 | 200 | `{"book": {...}, "stores": []}` |
+
+### 서비스 레이어 (`bookstores/services.py`)
+
+```python
+def get_book_prices(title: str, author: str = "", isbn: str = "") -> list:
+    """
+    네이버 쇼핑 API로 서점별 최저가 조회.
+    반환: [{"store_name": str, "price": int, "purchase_url": str}, ...]
+    """
+```
+
+### 환경변수
+`.env.example`에 추가:
+```
+NAVER_CLIENT_ID=
+NAVER_CLIENT_SECRET=
+```
+
+---
+
+## Task 3. 테스트
+
+### bookstores/tests.py
+1. 정상 응답 테스트: 네이버 API mock → 여러 서점 가격 반환 확인
+2. title 파라미터 누락 테스트: 400 응답 확인
+3. 검색 결과 없음 테스트: `stores: []` 반환 확인
+4. 동일 서점 중복 시 최저가 선택 테스트
+
+### recommendations/tests.py
+- isbn 필드 포함 여부 테스트 추가 (GPT mock 응답에 isbn 포함)
+
+---
+
+## URL 구조
+
+```
+config/urls.py
+├── /api/v1/recommendations/  → recommendations.urls
+└── /api/v1/bookstores/       → bookstores.urls
+        └── prices/           → BookPriceView
+```
+
+---
+
+## 코드 스타일
+- black (line-length 88)
+- flake8
+- isort
+- pre-commit 훅 통과 필수
