@@ -177,11 +177,15 @@ def get_book_recommendations(validated_data: dict) -> list:
 반드시 다음 JSON 형식으로만 응답하세요:
 {
   "recommendations": [
-    {"title": "책 제목", "author": "저자명", "reason": "추천 이유 (사용자 취향과의 연관성)"}
+    {"title": "책 제목", "author": "저자명", "reason": "추천 이유 (사용자 취향과의 연관성)",
+     "isbn": "한국어판 ISBN-13 숫자 13자리 또는 null"}
   ]
 }
-- 국내외 도서 모두 포함 가능 (번역서의 경우 한국어 제목 사용)
+- 반드시 한국에서 출판된 국내 도서 또는 한국어로 번역 출판된 도서만 추천
+- 번역서는 반드시 한국어 번역 제목과 번역서 저자명(역자 제외)을 사용
+- 영어 원서 등 외국어 원본 도서는 추천하지 않음
 - reason은 해당 사용자의 취향과 연결하여 구체적으로 작성 (2-3문장)
+- isbn은 한국어판 ISBN-13 번호 (9788 또는 9791로 시작하는 13자리 숫자). 확실하지 않으면 null
 - 5권의 책은 서로 중복 없이 다양한 책을 추천"""
 
     response = client.chat.completions.create(

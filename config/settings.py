@@ -46,7 +46,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "drf_spectacular",
     "recommendations",
+    "bookstores",
 ]
 
 MIDDLEWARE = [
@@ -146,4 +148,12 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# Swagger / OpenAPI 설정
+SPECTACULAR_SETTINGS = {
+    "TITLE": "도서 추천 플랫폼 API",
+    "DESCRIPTION": "GPT 기반 맞춤 도서 추천 및 가격 비교 서비스",
+    "VERSION": "1.0.0",
 }
