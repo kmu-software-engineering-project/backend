@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "recommendations",
     "bookstores",
+    "libraries",
 ]
 
 MIDDLEWARE = [
@@ -138,10 +139,13 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-# CORS - React 개발 서버 허용
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React 기본 포트
-]
+# CORS - 개발 환경에서는 모든 origin 허용, 프로덕션에서는 React 개발 서버만 허용
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+    ]
 
 # DRF 기본 설정
 REST_FRAMEWORK = {

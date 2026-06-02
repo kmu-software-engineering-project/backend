@@ -15,7 +15,11 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+import os
+
+from django.conf import settings
 from django.contrib import admin
+from django.http import FileResponse
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
@@ -23,6 +27,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/recommendations/", include("recommendations.urls")),
     path("api/v1/bookstores/", include("bookstores.urls")),
+    path("api/v1/libraries/", include("libraries.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/docs/",
@@ -30,3 +35,11 @@ urlpatterns = [
         name="swagger-ui",
     ),
 ]
+
+if settings.DEBUG:
+
+    def map_test_view(request):
+        file_path = os.path.join(settings.BASE_DIR, "map_test.html")
+        return FileResponse(open(file_path, "rb"), content_type="text/html")
+
+    urlpatterns += [path("", map_test_view, name="map-test")]
