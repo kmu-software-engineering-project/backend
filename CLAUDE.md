@@ -24,9 +24,9 @@
 | 구분 | 기술 |
 |---|---|
 | Backend | Django 5.2, Django REST Framework |
-| Frontend | React, TypeScript |
+| Frontend | React, Next.js, TypeScript |
 | Database | SQLite (개발), 추후 PostgreSQL 전환 검토 |
-| External API | OpenAPI (서점/도서관), Map API |
+| External API | OpenAI, 네이버 도서, 서울시 공공데이터, Kakao, Aladin, 국립중앙도서관 |
 | 버전 관리 | GitHub |
 | 협업 도구 | Notion |
 | 배포 | AWS (EC2 or 컨테이너 기반) |
@@ -63,7 +63,12 @@ se_backend/
 │   ├── QUALITY_SCORE.md
 │   └── decisions/               # 아키텍처 결정 기록 (ADR)
 │
-└── {app_name}/                # 기능별 앱 (추후 추가)
+├── recommendations/           # ✅ GPT 맞춤 도서 추천
+├── reviews/                   # ✅ 평점·리뷰 작성 (방명록)
+├── libraries/                 # ✅ 서울시 도서관 위치
+├── bookstores/                # ✅ 온라인 서점 가격 비교
+│
+└── {app_name}/                # 기능별 앱 공통 구조
     ├── models.py
     ├── serializers.py
     ├── views.py
@@ -183,3 +188,6 @@ BOOKSTORE_API_KEY=
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
 | 2026-05-27 | 초기 구성 | 전체 | - |
+| 2026-06-03 | `reviews` 앱 구현 | reviews | 방명록형 리뷰 기능 요구사항 반영 (닉네임·비밀번호·별점·한 줄 평, 정렬) |
+| 2026-06-03 | serializer 필드명 camelCase 통일 | reviews | 프론트엔드 TypeScript 타입과 필드명 일치 (`bookId`, `bookTitle`, `createdAt`) |
+| 2026-06-03 | 프론트엔드 개발 포트 변경 | 전체 | 백엔드(8000)와 충돌 방지, 프론트엔드 포트 3000으로 분리 |
