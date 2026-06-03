@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "recommendations",
     "bookstores",
     "libraries",
+    "reviews",
 ]
 
 MIDDLEWARE = [
