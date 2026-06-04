@@ -140,13 +140,13 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-# CORS - 개발 환경에서는 모든 origin 허용, 프로덕션에서는 React 개발 서버만 허용
+# CORS - 카카오 지도 API 포함 프론트엔드(React, port 3000) 허용
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
-else:
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-    ]
 
 # DRF 기본 설정
 REST_FRAMEWORK = {
