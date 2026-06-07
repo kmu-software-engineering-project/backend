@@ -157,7 +157,9 @@ def build_prompt(data: dict) -> str:
         lines.append(f"피하고 싶은 요소: {avoid_elements}.")
 
     lines.append(
-        "위 취향을 종합적으로 고려하여 한국 독자에게 적합한 책 5권을 추천해 주세요."
+        "위 취향을 종합적으로 고려하여 한국 독자에게 적합한 책 5권을 추천해 주세요. "
+        "단, 5권이 장르·분위기·작가·출판 시기 면에서 서로 겹치지 않도록 다양하게 구성해 주세요. "
+        "유명한 책과 덜 알려진 작품을 균형 있게 포함해 주세요."
     )
 
     return "\n".join(lines)
@@ -173,7 +175,8 @@ def get_book_recommendations(validated_data: dict) -> list:
 
     user_prompt = build_prompt(validated_data)
 
-    system_prompt = """당신은 도서 전문가입니다. 사용자의 취향 정보를 바탕으로 독자에게 적합한 책 5권을 추천해주세요.
+    system_prompt = """당신은 도서 전문가이자 큐레이터입니다. 사용자의 취향 정보를 바탕으로 독자에게 적합한 책 5권을 추천해주세요.
+
 반드시 다음 JSON 형식으로만 응답하세요:
 {
   "recommendations": [
@@ -181,12 +184,25 @@ def get_book_recommendations(validated_data: dict) -> list:
      "isbn": "한국어판 ISBN-13 숫자 13자리 또는 null"}
   ]
 }
+
+[출판 조건]
 - 반드시 한국에서 출판된 국내 도서 또는 한국어로 번역 출판된 도서만 추천
 - 번역서는 반드시 한국어 번역 제목과 번역서 저자명(역자 제외)을 사용
 - 영어 원서 등 외국어 원본 도서는 추천하지 않음
-- reason은 해당 사용자의 취향과 연결하여 구체적으로 작성 (2-3문장)
 - isbn은 한국어판 ISBN-13 번호 (9788 또는 9791로 시작하는 13자리 숫자). 확실하지 않으면 null
-- 5권의 책은 서로 중복 없이 다양한 책을 추천"""
+
+[다양성 규칙 — 반드시 준수]
+- 동일 저자의 책을 2권 이상 추천하지 않음
+- 5권 중 최소 2권은 대중적으로 덜 알려진 작품(숨겨진 명작, 주목받지 못한 도서)을 포함할 것
+- 출판 시기를 다양하게 구성할 것 (최신작·스테디셀러·고전 중 최소 2가지 이상 혼합)
+- 한국 작가 도서와 번역서를 적절히 혼합할 것 (한쪽으로만 치우치지 않음)
+- 각 책은 사용자 취향의 서로 다른 측면(장르·분위기·주제·문체·독서 목적 등)을 주로 반영하여 선택할 것
+  예: 1권은 분위기 중심, 2권은 주제 중심, 3권은 문체 중심으로 각각 다른 이유로 선정
+
+[추천 이유 작성 기준]
+- reason은 이 독자에게 이 책이 왜 적합한지에 초점을 맞춰 2-3문장으로 구체적으로 작성
+- 각 책의 reason은 사용자 취향 중 서로 다른 요소를 중심으로 작성 (5권이 비슷한 이유로 반복되지 않게)
+- 단순 줄거리 요약이 아닌, 해당 독자의 취향·목적·분위기 선호와 연결하여 작성"""
 
     response = client.chat.completions.create(
         model=model,
@@ -195,7 +211,7 @@ def get_book_recommendations(validated_data: dict) -> list:
             {"role": "user", "content": user_prompt},
         ],
         response_format={"type": "json_object"},
-        temperature=0.7,
+        temperature=0.9,
     )
 
     result = json.loads(response.choices[0].message.content)
