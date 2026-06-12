@@ -1,6 +1,11 @@
-# 도서 추천 플랫폼 백엔드
+# 도서 추천 플랫폼 백엔드(with harness engineering)
 
-소프트웨어공학 7팀 프로젝트입니다. 사용자 취향 기반 도서 추천, 리뷰, 온라인 서점 최저가 비교, 서울시 도서관 위치 안내를 제공하는 RESTful API 서버입니다.
+소프트웨어공학 7팀 프로젝트입니다. 사용자 취향 기반 도서 추천, 리뷰, 온라인 서점 최저가 비교, 서울시 도서관 위치 안내를 제공하는 RESTful API 서버입니다. 또한, 하네스 엔지니어링(harness engineering)을 직접 프로젝트에 적용해가며 작업하였습니다.
+
+## 하네스 엔지니어링
+
+이 프로젝트는 AI 에이전트 팀이 함께하는 하네스 엔지니어링(harness engineering)을 직접 프로젝트에 적용하고 있습니다.
+구성 요소, 실행 흐름, 에이전트 역할 등 상세 내용은 [harness.md](harness.md)를 참고하세요.
 
 ## 기술 스택
 
@@ -84,6 +89,7 @@ uv run pre-commit run --all-files
 | GET | `/libraries/map-config/` | Kakao 지도 API 키 |
 | GET | `/bookstores/prices/?isbn={isbn}` | 온라인 서점 최저가 및 구매 링크 |
 | GET | `/docs/` | Swagger UI API 문서 |
+
 
 ## 주요 기능
 
