@@ -1,4 +1,4 @@
-# 도서 추천 플랫폼 백엔드(with harness engineering)
+# AI 기반 도서 추천 플랫폼 백엔드(with harness engineering)
 
 소프트웨어공학 7팀 프로젝트입니다. 사용자 취향 기반 도서 추천, 리뷰, 온라인 서점 최저가 비교, 서울시 도서관 위치 안내를 제공하는 RESTful API 서버입니다. 또한, 하네스 엔지니어링(harness engineering)을 직접 프로젝트에 적용해가며 작업하였습니다.
 
